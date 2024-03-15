@@ -1,7 +1,8 @@
-const SHAPE_WIDTH = 50, SHAPE_HEIGHT = 50;
+const SHAPE_WIDTH = 200, SHAPE_HEIGHT = 200;
 
 
-let mouseX = 1024, mouseY = 500;
+let mouseX = window.innerWidth / 2 - SHAPE_WIDTH / 2;
+let mouseY = window.innerHeight / 2 - SHAPE_HEIGHT / 2;
 let ctx;
 let shapeX = mouseX, shapeY = mouseY;
 let mouseDown = false;
@@ -12,8 +13,6 @@ const setup = () => {
     cnv.width = window.innerWidth;
     cnv.height = window.innerHeight;
 
-    const dbgDev = document.getElementById("log");
-    dbgDev.innerHTML = current X: ${mouseX}, current Y: ${mouseY};
 
     logMouseCoordinates();
 
@@ -61,8 +60,7 @@ const logMouseCoordinates = () => {
 
 const checkMouseInbound = () => {
     return mouseX >= shapeX && mouseX <= (shapeX + SHAPE_WIDTH) 
-            && mouseY >= shapeY && mouseY <= (shapeY + SHAPE_HEIGHT);
+        && mouseY >= shapeY && mouseY <= (shapeY + SHAPE_HEIGHT);
 }
 
 setup();
-
