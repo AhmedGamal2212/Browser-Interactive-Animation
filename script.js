@@ -13,14 +13,18 @@ const setup = () => {
     cnv.height = window.innerHeight;
 
     const dbgDev = document.getElementById("log");
-    dbgDev.innerHTML = `current X: ${mouseX}, current Y: ${mouseY}`;
+    dbgDev.innerHTML = current X: ${mouseX}, current Y: ${mouseY};
 
     logMouseCoordinates();
 
     window.addEventListener('mousemove', (event) => {
-        mouseX = event.screenX;
-        mouseY = event.screenY;
+        mouseX = event.clientX - cnv.offsetLeft;
+        mouseY = event.clientY - cnv.offsetTop;
         logMouseCoordinates();
+
+        if(mouseDown === true) {
+            draw(mouseX, mouseY);
+        }
     });
 
     window.addEventListener('mousedown', (event) => {
@@ -37,6 +41,13 @@ const setup = () => {
 
     ctx = cnv.getContext("2d");
     ctx.fillStyle = "green";
+    draw(shapeX, shapeY);
+}
+
+const draw = (x, y) => {
+    ctx.clearRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
+    shapeX = x;
+    shapeY = y;
     ctx.fillRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
 }
 
@@ -48,20 +59,9 @@ const logMouseCoordinates = () => {
 
 }
 
-
-const changePos = () => {
-    ctx.clearRect(mouseX, mouseY, SHAPE_WIDTH, SHAPE_HEIGHT);
-    if(mouseX == 450) {
-        mouseY += 50;
-        mouseX = 0;
-    } else {
-        mouseX += 50;
-    }
-    ctx.fillRect(mouseX, mouseY, SHAPE_WIDTH, SHAPE_HEIGHT);
-}
-
 const checkMouseInbound = () => {
-    return true;
+    return mouseX >= shapeX && mouseX <= (shapeX + SHAPE_WIDTH) 
+            && mouseY >= shapeY && mouseY <= (shapeY + SHAPE_HEIGHT);
 }
 
 setup();
