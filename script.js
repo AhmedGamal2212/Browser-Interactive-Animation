@@ -1,16 +1,18 @@
 const SHAPE_WIDTH = 200, SHAPE_HEIGHT = 200;
-const SHAPE_ID = Math.floor(Math.random() * 100);
+const SHAPE_ID = crypto.randomUUID();
+const SYNC_INTERVAL = 10;
 
 let mouseX = window.innerWidth / 2 - SHAPE_WIDTH / 2;
 let mouseY = window.innerHeight / 2 - SHAPE_HEIGHT / 2;
 let ctx;
 let shapeX = mouseX, shapeY = mouseY;
 let mouseDown = false;
-
+let counter = 1;
 
 const setup = () => {
     const cnv = document.getElementById('main-canvas');
-    let shapeColor = getShapeColor();
+    const shapeColor = getShapeColor();
+    let syncIntervalId;
     cnv.width = window.innerWidth;
     cnv.height = window.innerHeight;
     logMouseCoordinates();
@@ -20,19 +22,21 @@ const setup = () => {
         logMouseCoordinates();
 
         if(mouseDown === true) {
-            draw(mouseX, mouseY);
+            draw(mouseX, mouseY, shapeColor);
         }
     });
 
     window.addEventListener('mousedown', (event) => {
         if(checkMouseInbound()){
             mouseDown = true;
+            storeCanvasDimensions(shapeColor);
         }
         logMouseCoordinates();
     });
 
     window.addEventListener('mouseup', (event) => {
         mouseDown = false;
+        storeCanvasDimensions(shapeColor);
         logMouseCoordinates();
     });
 
@@ -40,11 +44,16 @@ const setup = () => {
         const shapes = JSON.parse(localStorage.getItem('shapes'));
         delete shapes[SHAPE_ID];
         localStorage.setItem('shapes', JSON.stringify(shapes));
+        clearInterval(syncIntervalId);
     });
 
     ctx = cnv.getContext("2d");
     ctx.fillStyle = shapeColor;
     draw(shapeX, shapeY, shapeColor);
+
+    syncIntervalId = setInterval(() => {
+        syncShapes(shapeColor);
+    }, SYNC_INTERVAL);
 }
 
 const draw = (x, y, color) => {
@@ -60,7 +69,7 @@ const logMouseCoordinates = () => {
     dbgDev.innerHTML = `<b>MouseX:</b> ${mouseX}, <b>MouseY:</b> ${mouseY}`;
     dbgDev.innerHTML += `<br> <b>ShapeX:</b> ${shapeX}, <b>ShapeY:</b> ${shapeY}`;
     dbgDev.innerHTML += `<br> <b>MouseDown:</b> ${mouseDown}`;
-
+    document.getElementById('shapes-log').innerHTML = `<br> <b>Shapes:</b> ${localStorage.getItem('shapes')}`;
 }
 
 const checkMouseInbound = () => {
@@ -73,7 +82,10 @@ const getShapeColor = () => {
         return "green";
     }
     
-    shapes = JSON.parse(localStorage.getItem("shapes"));
+    const shapes = JSON.parse(localStorage.getItem("shapes"));
+    if(Object.keys(shapes).length === 0) {
+        return "green";
+    }
     if(Object.keys(shapes).length == 2){
         throw Error("Exceeded maximum shapes");
     }
@@ -96,8 +108,32 @@ function storeCanvasDimensions(shapeColor) {
         color: shapeColor, 
         state: mouseDown
     };
+
     shapes[SHAPE_ID] = shape;
     localStorage.setItem('shapes', JSON.stringify(shapes));
+}
+
+const syncShapes = (shapeColor) => {
+    if(mouseDown) {
+        return;
+    }
+    const shapes = JSON.parse(localStorage.getItem('shapes'));
+
+    if(shapes === null) {
+        return;
+    }
+    let otherShape;
+    for(const key of Object.keys(shapes)) {
+        if(key === SHAPE_ID) {
+            continue;
+        }
+        otherShape = shapes[key];
+    }
+    document.getElementById('session-count-log').innerHTML = `<br><b>Other Shape:</b> ${JSON.stringify(otherShape)}`;
+    if(otherShape === undefined || otherShape['state'] === false) {
+        return;
+    }
+    draw(otherShape['x'], otherShape['y'], shapeColor);
 }
 
 
