@@ -4,6 +4,7 @@ const SYNC_INTERVAL = 10;
 
 let mouseX = window.innerWidth / 2 - SHAPE_WIDTH / 2;
 let mouseY = window.innerHeight / 2 - SHAPE_HEIGHT / 2;
+let deltaX, deltaY;
 let ctx;
 let shapeX = mouseX, shapeY = mouseY;
 let mouseDown = false;
@@ -15,19 +16,21 @@ const setup = () => {
     let syncIntervalId;
     cnv.width = window.innerWidth;
     cnv.height = window.innerHeight;
+    deltaX = 0, deltaY = 0; 
     logMouseCoordinates();
     window.addEventListener('mousemove', (event) => {
         mouseX = event.clientX - cnv.offsetLeft;
         mouseY = event.clientY - cnv.offsetTop;
         logMouseCoordinates();
-
         if(mouseDown === true) {
-            draw(mouseX, mouseY, shapeColor);
+            draw(mouseX - deltaX, mouseY - deltaY, shapeColor);
         }
     });
 
     window.addEventListener('mousedown', (event) => {
         if(checkMouseInbound()){
+            deltaX = Math.abs(mouseX - shapeX);
+            deltaY = Math.abs(mouseY - shapeY);
             mouseDown = true;
             storeCanvasDimensions(shapeColor);
         }
@@ -57,7 +60,9 @@ const setup = () => {
 }
 
 const draw = (x, y, color) => {
-    ctx.clearRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
+    const cnv = document.getElementById('main-canvas');
+
+    ctx.clearRect(0, 0, cnv.width, cnv.height);
     shapeX = x;
     shapeY = y;
     ctx.fillRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
@@ -69,6 +74,8 @@ const logMouseCoordinates = () => {
     dbgDev.innerHTML = `<b>MouseX:</b> ${mouseX}, <b>MouseY:</b> ${mouseY}`;
     dbgDev.innerHTML += `<br> <b>ShapeX:</b> ${shapeX}, <b>ShapeY:</b> ${shapeY}`;
     dbgDev.innerHTML += `<br> <b>MouseDown:</b> ${mouseDown}`;
+    dbgDev.innerHTML += `<br> <b>DeltaX:</b> ${deltaX}, <b>DeltaY:</b> ${deltaY}`;
+
     document.getElementById('shapes-log').innerHTML = `<br> <b>Shapes:</b> ${localStorage.getItem('shapes')}`;
 }
 
