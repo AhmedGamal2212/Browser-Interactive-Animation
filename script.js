@@ -61,12 +61,19 @@ const setup = () => {
 
 const draw = (x, y, color) => {
     const cnv = document.getElementById('main-canvas');
-
     ctx.clearRect(0, 0, cnv.width, cnv.height);
     shapeX = x;
     shapeY = y;
     ctx.fillRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
     storeCanvasDimensions(color);
+}
+
+const drawMouseHoldPosition = (x, y, squareShapeColor) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, 2 * Math.PI, false);
+    ctx.fillStyle = 'red';
+    ctx.fill();
+    ctx.fillStyle = squareShapeColor;
 }
 
 const logMouseCoordinates = () => {
@@ -113,7 +120,9 @@ function storeCanvasDimensions(shapeColor) {
         x: shapeX, 
         y: shapeY, 
         color: shapeColor, 
-        state: mouseDown
+        state: mouseDown,
+        mouseDeltaX : deltaX,
+        mouseDeltaY : deltaY
     };
 
     shapes[SHAPE_ID] = shape;
@@ -138,9 +147,12 @@ const syncShapes = (shapeColor) => {
     }
     document.getElementById('session-count-log').innerHTML = `<br><b>Other Shape:</b> ${JSON.stringify(otherShape)}`;
     if(otherShape === undefined || otherShape['state'] === false) {
+        draw(shapeX, shapeY, shapeColor);
         return;
     }
     draw(otherShape['x'], otherShape['y'], shapeColor);
+    drawMouseHoldPosition(otherShape['x'] + otherShape['mouseDeltaX'], 
+            otherShape['y'] + otherShape['mouseDeltaY'], shapeColor);
 }
 
 
