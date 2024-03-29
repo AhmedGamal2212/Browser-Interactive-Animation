@@ -67,9 +67,21 @@ const draw = (x, y, color) => {
     ctx.clearRect(0, 0, cnv.width, cnv.height);
     shapeX = x;
     shapeY = y;
-    ctx.fillRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
+    // ctx.fillRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
+    roundedRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT, 5);
     storeCanvasDimensions(color);
 };
+
+const roundedRect = (x, y, width, height, radius) => {
+    ctx.beginPath();
+    ctx.moveTo(x, y + radius);
+    ctx.arcTo(x, y + height, x + radius, y + height, radius);
+    ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+    ctx.arcTo(x + width, y, x + width - radius, y, radius);
+    ctx.arcTo(x, y, x, y + radius, radius);
+    ctx.fill();
+    ctx.stroke();
+}
 
 const drawMouseHoldPosition = (x, y, squareShapeColor) => {
     ctx.beginPath();
@@ -81,7 +93,13 @@ const drawMouseHoldPosition = (x, y, squareShapeColor) => {
 
 const logMouseCoordinates = () => {
     const dbgDev = document.getElementById('log');
-    const numberOfShapes = Object.keys(JSON.parse(localStorage.getItem('shapes') ? localStorage.getItem('shapes') : "[]")).length;
+    const numberOfShapes = Object.keys(
+        JSON.parse(
+            localStorage.getItem('shapes')
+                ? localStorage.getItem('shapes')
+                : '[]'
+        )
+    ).length;
     dbgDev.innerHTML = `<b>MouseX:</b> ${mouseX}, <b>MouseY:</b> ${mouseY}`;
     dbgDev.innerHTML += `<br> <b>ShapeX:</b> ${shapeX}, <b>ShapeY:</b> ${shapeY}`;
     dbgDev.innerHTML += `<br> <b>MouseDown:</b> ${mouseDown}`;
