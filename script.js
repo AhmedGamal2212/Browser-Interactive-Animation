@@ -1,17 +1,31 @@
-const SHAPE_WIDTH = 100,
-    SHAPE_HEIGHT = 100;
-const CIRCLE_RADIUS = 5;
-const SHAPE_ID = crypto.randomUUID();
-const SYNC_INTERVAL = 5;
+import {
+    SHAPE_WIDTH,
+    SHAPE_HEIGHT,
+    CIRCLE_RADIUS,
+    SYNC_INTERVAL,
+    SHAPE_RADIUS,
+} from './constants.js';
 
-let mouseX = window.innerWidth / 2 - SHAPE_WIDTH / 2;
-let mouseY = window.innerHeight / 2 - SHAPE_HEIGHT / 2;
-let deltaX, deltaY;
+import Coordinates from './coordinates.js';
+
+const mouseCoordinates = Object.create(Coordinates);
+const deltaCoordinates = Object.create(Coordinates);
+
+const shapeInfo = {
+    ID: crypto.randomUUID(),
+    coordinates: Object.create(Coordinates),
+};
+
+mouseCoordinates.setCoordinates(
+    window.innerWidth / 2 - SHAPE_WIDTH / 2,
+    window.innerHeight / 2 - SHAPE_HEIGHT / 2
+);
+
+shapeInfo.coordinates.setCoordinates(mouseCoordinates.x, mouseCoordinates.y);
+
 let ctx;
-let shapeX = mouseX,
-    shapeY = mouseY;
+
 let mouseDown = false;
-let counter = 1;
 
 const setup = () => {
     const cnv = document.getElementById('main-canvas');
@@ -19,21 +33,31 @@ const setup = () => {
     let syncIntervalId;
     cnv.width = window.innerWidth;
     cnv.height = window.innerHeight;
-    (deltaX = 0), (deltaY = 0);
+    deltaCoordinates.setCoordinates(0, 0);
     logMouseCoordinates();
     window.addEventListener('mousemove', (event) => {
-        mouseX = event.clientX + window.scrollX - cnv.offsetLeft;
-        mouseY = event.clientY + window.scrollY - cnv.offsetTop;
+        mouseCoordinates.setCoordinates(
+            event.clientX + window.scrollX - cnv.offsetLeft,
+            event.clientY + window.scrollY - cnv.offsetTop
+        );
+
         logMouseCoordinates();
         if (mouseDown === true) {
-            draw(mouseX - deltaX, mouseY - deltaY, shapeColor);
+            draw(
+                mouseCoordinates.x - deltaCoordinates.x,
+                mouseCoordinates.y - deltaCoordinates.y,
+                shapeColor
+            );
         }
     });
 
     window.addEventListener('mousedown', (event) => {
         if (checkMouseInbound()) {
-            deltaX = Math.abs(mouseX - shapeX);
-            deltaY = Math.abs(mouseY - shapeY);
+            // TODO: fix mouseCoordinates.x, shapeInfo.coordinates.x
+            deltaCoordinates.setCoordinates(
+                Math.abs(mouseCoordinates.x - shapeInfo.coordinates.x),
+                Math.abs(mouseCoordinates.y - shapeInfo.coordinates.y)
+            );
             mouseDown = true;
             storeCanvasDimensions(shapeColor);
         }
@@ -48,14 +72,14 @@ const setup = () => {
 
     window.addEventListener('beforeunload', (event) => {
         const shapes = JSON.parse(localStorage.getItem('shapes'));
-        delete shapes[SHAPE_ID];
+        delete shapes[shapeInfo.ID];
         localStorage.setItem('shapes', JSON.stringify(shapes));
         clearInterval(syncIntervalId);
     });
 
     ctx = cnv.getContext('2d');
     ctx.fillStyle = shapeColor;
-    draw(shapeX, shapeY, shapeColor);
+    draw(shapeInfo.coordinates.x, shapeInfo.coordinates.y, shapeColor);
 
     syncIntervalId = setInterval(() => {
         syncShapes(shapeColor);
@@ -65,10 +89,15 @@ const setup = () => {
 const draw = (x, y, color) => {
     const cnv = document.getElementById('main-canvas');
     ctx.clearRect(0, 0, cnv.width, cnv.height);
-    shapeX = x;
-    shapeY = y;
-    // ctx.fillRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT);
-    roundedRect(shapeX, shapeY, SHAPE_WIDTH, SHAPE_HEIGHT, 5);
+    shapeInfo.coordinates.x = x;
+    shapeInfo.coordinates.y = y;
+    roundedRect(
+        shapeInfo.coordinates.x,
+        shapeInfo.coordinates.y,
+        SHAPE_WIDTH,
+        SHAPE_HEIGHT,
+        SHAPE_RADIUS
+    );
     storeCanvasDimensions(color);
 };
 
@@ -81,7 +110,7 @@ const roundedRect = (x, y, width, height, radius) => {
     ctx.arcTo(x, y, x, y + radius, radius);
     ctx.fill();
     ctx.stroke();
-}
+};
 
 const drawMouseHoldPosition = (x, y, squareShapeColor) => {
     ctx.beginPath();
@@ -100,23 +129,22 @@ const logMouseCoordinates = () => {
                 : '[]'
         )
     ).length;
-    dbgDev.innerHTML = `<b>MouseX:</b> ${mouseX}, <b>MouseY:</b> ${mouseY}`;
-    dbgDev.innerHTML += `<br> <b>ShapeX:</b> ${shapeX}, <b>ShapeY:</b> ${shapeY}`;
+    dbgDev.innerHTML = `<b>MouseX:</b> ${mouseCoordinates.x}, <b>MouseY:</b> ${mouseCoordinates.y}`;
+    dbgDev.innerHTML += `<br> <b>ShapeX:</b> ${shapeInfo.coordinates.x}, <b>ShapeY:</b> ${shapeInfo.coordinates.y}`;
     dbgDev.innerHTML += `<br> <b>MouseDown:</b> ${mouseDown}`;
-    dbgDev.innerHTML += `<br> <b>DeltaX:</b> ${deltaX}, <b>DeltaY:</b> ${deltaY}`;
+    dbgDev.innerHTML += `<br> <b>DeltaX:</b> ${deltaCoordinates.x}, <b>DeltaY:</b> ${deltaCoordinates.y}`;
 
     document.getElementById(
         'shapes-log'
     ).innerHTML = `<br> <b>Number of Shapes:</b> ${numberOfShapes} <br>`;
-    // + <br> <b>Shapes:</b> ${localStorage.getItem('shapes')}`;
 };
 
 const checkMouseInbound = () => {
     return (
-        mouseX >= shapeX &&
-        mouseX <= shapeX + SHAPE_WIDTH &&
-        mouseY >= shapeY &&
-        mouseY <= shapeY + SHAPE_HEIGHT
+        mouseCoordinates.x >= shapeInfo.coordinates.x &&
+        mouseCoordinates.x <= shapeInfo.coordinates.x + SHAPE_WIDTH &&
+        mouseCoordinates.y >= shapeInfo.coordinates.y &&
+        mouseCoordinates.y <= shapeInfo.coordinates.y + SHAPE_HEIGHT
     );
 };
 
@@ -133,16 +161,16 @@ function storeCanvasDimensions(shapeColor) {
     }
 
     const shape = {
-        id: SHAPE_ID,
-        x: shapeX,
-        y: shapeY,
+        id: shapeInfo.ID,
+        x: shapeInfo.coordinates.x,
+        y: shapeInfo.coordinates.y,
         color: shapeColor,
         state: mouseDown,
-        mouseDeltaX: deltaX,
-        mouseDeltaY: deltaY,
+        mouseDeltaX: deltaCoordinates.x,
+        mouseDeltaY: deltaCoordinates.y,
     };
 
-    shapes[SHAPE_ID] = shape;
+    shapes[shapeInfo.ID] = shape;
     localStorage.setItem('shapes', JSON.stringify(shapes));
 }
 
@@ -157,7 +185,7 @@ const syncShapes = (shapeColor) => {
     }
     let otherShape;
     for (const key of Object.keys(shapes)) {
-        if (key === SHAPE_ID) {
+        if (key === shapeInfo.ID) {
             continue;
         }
         if (shapes[key].state) {
@@ -168,7 +196,7 @@ const syncShapes = (shapeColor) => {
         'session-count-log'
     ).innerHTML = `<br><b>Other Shape:</b> ${JSON.stringify(otherShape)}`;
     if (otherShape === undefined || otherShape['state'] === false) {
-        draw(shapeX, shapeY, shapeColor);
+        draw(shapeInfo.coordinates.x, shapeInfo.coordinates.y, shapeColor);
         return;
     }
     draw(otherShape['x'], otherShape['y'], shapeColor);
