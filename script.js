@@ -13,6 +13,9 @@ let shapeX = mouseX,
 let mouseDown = false;
 let counter = 1;
 
+
+
+
 const setup = () => {
     const cnv = document.getElementById('main-canvas');
     const shapeColor = getShapeColor();
@@ -21,9 +24,23 @@ const setup = () => {
     cnv.height = window.innerHeight;
     (deltaX = 0), (deltaY = 0);
     logMouseCoordinates();
+
+    attachWindowEvents(shapeColor, syncIntervalId);
+
+    ctx = cnv.getContext('2d');
+    ctx.fillStyle = shapeColor;
+    draw(shapeX, shapeY, shapeColor);
+
+    syncIntervalId = setInterval(() => {
+        syncShapes(shapeColor);
+    }, SYNC_INTERVAL);
+};
+
+const attachWindowEvents = (shapeColor, syncIntervalId) => {
+
     window.addEventListener('mousemove', (event) => {
-        mouseX = event.clientX - cnv.offsetLeft;
-        mouseY = event.clientY - cnv.offsetTop;
+        mouseX = event.clientX + window.scrollX - cnv.offsetLeft;
+        mouseY = event.clientY + window.scrollY - cnv.offsetTop;
         logMouseCoordinates();
         if (mouseDown === true) {
             draw(mouseX - deltaX, mouseY - deltaY, shapeColor);
@@ -52,15 +69,7 @@ const setup = () => {
         localStorage.setItem('shapes', JSON.stringify(shapes));
         clearInterval(syncIntervalId);
     });
-
-    ctx = cnv.getContext('2d');
-    ctx.fillStyle = shapeColor;
-    draw(shapeX, shapeY, shapeColor);
-
-    syncIntervalId = setInterval(() => {
-        syncShapes(shapeColor);
-    }, SYNC_INTERVAL);
-};
+}
 
 const draw = (x, y, color) => {
     const cnv = document.getElementById('main-canvas');
