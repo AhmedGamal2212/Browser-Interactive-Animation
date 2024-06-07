@@ -8,20 +8,7 @@ import {
 
 import Coordinates from './coordinates.js';
 
-const mouseCoordinates = Object.create(Coordinates);
-const deltaCoordinates = Object.create(Coordinates);
-
-const shapeInfo = {
-    ID: crypto.randomUUID(),
-    coordinates: Object.create(Coordinates),
-};
-
-mouseCoordinates.setCoordinates(
-    window.innerWidth / 2 - SHAPE_WIDTH / 2,
-    window.innerHeight / 2 - SHAPE_HEIGHT / 2
-);
-
-shapeInfo.coordinates.setCoordinates(mouseCoordinates.x, mouseCoordinates.y);
+import { getRandomColor } from './utils.js';
 
 let ctx;
 
@@ -29,45 +16,99 @@ let mouseDown = false;
 
 const setup = () => {
     const cnv = document.getElementById('main-canvas');
-    const shapeColor = getShapeColor();
-    let syncIntervalId;
+
+    const mouseCoordinates = new Coordinates();
+    const deltaCoordinates = new Coordinates();
+
+    const shapeInfo = {
+        ID: crypto.randomUUID(),
+        coordinates: new Coordinates(),
+        color: getRandomColor(),
+    };
+
+    mouseCoordinates.setCoordinates(
+        window.innerWidth / 2 - SHAPE_WIDTH / 2,
+        window.innerHeight / 2 - SHAPE_HEIGHT / 2
+    );
+
+    shapeInfo.coordinates.setCoordinates(
+        mouseCoordinates.x,
+        mouseCoordinates.y
+    );
+
     cnv.width = window.innerWidth;
     cnv.height = window.innerHeight;
+
     deltaCoordinates.setCoordinates(0, 0);
-    logMouseCoordinates();
+
+    const syncIntervalId = setInterval(() => {
+        syncShapes(shapeInfo);
+    }, SYNC_INTERVAL);
+
+    logMouseCoordinates(mouseCoordinates, deltaCoordinates, shapeInfo);
+
+    const attachEventListenersParams = {
+        syncIntervalId,
+        cnv,
+        mouseCoordinates,
+        shapeInfo,
+        deltaCoordinates,
+    };
+
+    attachEventListeners(attachEventListenersParams);
+
+    ctx = cnv.getContext('2d');
+    ctx.fillStyle = shapeInfo.color;
+    draw(
+        shapeInfo.coordinates.x,
+        shapeInfo.coordinates.y,
+        shapeInfo,
+        deltaCoordinates
+    );
+};
+
+const attachEventListeners = (params) => {
+    const {
+        syncIntervalId,
+        cnv,
+        mouseCoordinates,
+        shapeInfo,
+        deltaCoordinates,
+    } = params;
+
     window.addEventListener('mousemove', (event) => {
         mouseCoordinates.setCoordinates(
             event.clientX + window.scrollX - cnv.offsetLeft,
             event.clientY + window.scrollY - cnv.offsetTop
         );
 
-        logMouseCoordinates();
+        logMouseCoordinates(mouseCoordinates, deltaCoordinates, shapeInfo);
         if (mouseDown === true) {
             draw(
                 mouseCoordinates.x - deltaCoordinates.x,
                 mouseCoordinates.y - deltaCoordinates.y,
-                shapeColor
+                shapeInfo,
+                deltaCoordinates
             );
         }
     });
 
     window.addEventListener('mousedown', (event) => {
-        if (checkMouseInbound()) {
-            // TODO: fix mouseCoordinates.x, shapeInfo.coordinates.x
+        if (checkMouseInbound(mouseCoordinates, shapeInfo)) {
             deltaCoordinates.setCoordinates(
                 Math.abs(mouseCoordinates.x - shapeInfo.coordinates.x),
                 Math.abs(mouseCoordinates.y - shapeInfo.coordinates.y)
             );
             mouseDown = true;
-            storeCanvasDimensions(shapeColor);
+            storeCanvasDimensions(shapeInfo.color);
         }
-        logMouseCoordinates();
+        logMouseCoordinates(mouseCoordinates, deltaCoordinates, shapeInfo);
     });
 
     window.addEventListener('mouseup', (event) => {
         mouseDown = false;
-        storeCanvasDimensions(shapeColor);
-        logMouseCoordinates();
+        storeCanvasDimensions(shapeInfo.color);
+        logMouseCoordinates(mouseCoordinates, deltaCoordinates, shapeInfo);
     });
 
     window.addEventListener('beforeunload', (event) => {
@@ -76,17 +117,9 @@ const setup = () => {
         localStorage.setItem('shapes', JSON.stringify(shapes));
         clearInterval(syncIntervalId);
     });
-
-    ctx = cnv.getContext('2d');
-    ctx.fillStyle = shapeColor;
-    draw(shapeInfo.coordinates.x, shapeInfo.coordinates.y, shapeColor);
-
-    syncIntervalId = setInterval(() => {
-        syncShapes(shapeColor);
-    }, SYNC_INTERVAL);
 };
 
-const draw = (x, y, color) => {
+const draw = (x, y, shapeInfo, deltaCoordinates) => {
     const cnv = document.getElementById('main-canvas');
     ctx.clearRect(0, 0, cnv.width, cnv.height);
     shapeInfo.coordinates.x = x;
@@ -98,7 +131,7 @@ const draw = (x, y, color) => {
         SHAPE_HEIGHT,
         SHAPE_RADIUS
     );
-    storeCanvasDimensions(color);
+    storeCanvasDimensions(shapeInfo, deltaCoordinates);
 };
 
 const roundedRect = (x, y, width, height, radius) => {
@@ -120,7 +153,7 @@ const drawMouseHoldPosition = (x, y, squareShapeColor) => {
     ctx.fillStyle = squareShapeColor;
 };
 
-const logMouseCoordinates = () => {
+const logMouseCoordinates = (mouseCoordinates, deltaCoordinates) => {
     const dbgDev = document.getElementById('log');
     const numberOfShapes = Object.keys(
         JSON.parse(
@@ -139,7 +172,7 @@ const logMouseCoordinates = () => {
     ).innerHTML = `<br> <b>Number of Shapes:</b> ${numberOfShapes} <br>`;
 };
 
-const checkMouseInbound = () => {
+const checkMouseInbound = (mouseCoordinates, shapeInfo) => {
     return (
         mouseCoordinates.x >= shapeInfo.coordinates.x &&
         mouseCoordinates.x <= shapeInfo.coordinates.x + SHAPE_WIDTH &&
@@ -148,11 +181,7 @@ const checkMouseInbound = () => {
     );
 };
 
-const getShapeColor = () => {
-    return '#' + Math.floor(Math.random() * 16777215).toString(16);
-};
-
-function storeCanvasDimensions(shapeColor) {
+function storeCanvasDimensions(shapeInfo, deltaCoordinates) {
     let shapes = localStorage.getItem('shapes');
     if (shapes == null) {
         shapes = {};
@@ -164,7 +193,7 @@ function storeCanvasDimensions(shapeColor) {
         id: shapeInfo.ID,
         x: shapeInfo.coordinates.x,
         y: shapeInfo.coordinates.y,
-        color: shapeColor,
+        color: shapeInfo.color,
         state: mouseDown,
         mouseDeltaX: deltaCoordinates.x,
         mouseDeltaY: deltaCoordinates.y,
@@ -174,7 +203,7 @@ function storeCanvasDimensions(shapeColor) {
     localStorage.setItem('shapes', JSON.stringify(shapes));
 }
 
-const syncShapes = (shapeColor) => {
+const syncShapes = (shapeInfo) => {
     if (mouseDown) {
         return;
     }
@@ -196,14 +225,14 @@ const syncShapes = (shapeColor) => {
         'session-count-log'
     ).innerHTML = `<br><b>Other Shape:</b> ${JSON.stringify(otherShape)}`;
     if (otherShape === undefined || otherShape['state'] === false) {
-        draw(shapeInfo.coordinates.x, shapeInfo.coordinates.y, shapeColor);
+        draw(shapeInfo.coordinates.x, shapeInfo.coordinates.y, shapeInfo.color);
         return;
     }
-    draw(otherShape['x'], otherShape['y'], shapeColor);
+    draw(otherShape['x'], otherShape['y'], shapeInfo);
     drawMouseHoldPosition(
         otherShape['x'] + otherShape['mouseDeltaX'],
         otherShape['y'] + otherShape['mouseDeltaY'],
-        shapeColor
+        shapeInfo.color
     );
 };
 
