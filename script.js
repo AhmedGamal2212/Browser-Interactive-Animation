@@ -10,13 +10,12 @@ import Coordinates from './coordinates.js';
 
 import { getRandomColor } from './utils.js';
 
-let mouseDown = false;
-
 const setup = () => {
     const shapeInfo = {
         ID: crypto.randomUUID(),
         coordinates: new Coordinates(),
         color: getRandomColor(),
+        mouseDown: false,
     };
 
     const cnv = document.getElementById('main-canvas');
@@ -80,7 +79,7 @@ const attachEventListeners = (params) => {
         );
 
         logMouseCoordinates(mouseCoordinates, deltaCoordinates, shapeInfo);
-        if (mouseDown === true) {
+        if (shapeInfo.mouseDown === true) {
             drawShapeAtCoordinates(
                 mouseCoordinates.x - deltaCoordinates.x,
                 mouseCoordinates.y - deltaCoordinates.y
@@ -94,14 +93,14 @@ const attachEventListeners = (params) => {
                 Math.abs(mouseCoordinates.x - shapeInfo.coordinates.x),
                 Math.abs(mouseCoordinates.y - shapeInfo.coordinates.y)
             );
-            mouseDown = true;
+            shapeInfo.mouseDown = true;
             storeCanvasDimensions(shapeInfo, deltaCoordinates);
         }
         logMouseCoordinates(mouseCoordinates, deltaCoordinates, shapeInfo);
     });
 
     window.addEventListener('mouseup', (event) => {
-        mouseDown = false;
+        shapeInfo.mouseDown = false;
         storeCanvasDimensions(shapeInfo, deltaCoordinates);
         logMouseCoordinates(mouseCoordinates, deltaCoordinates, shapeInfo);
     });
@@ -164,7 +163,7 @@ const logMouseCoordinates = (mouseCoordinates, deltaCoordinates, shapeInfo) => {
     ).length;
     dbgDev.innerHTML = `<b>MouseX:</b> ${mouseCoordinates.x}, <b>MouseY:</b> ${mouseCoordinates.y}`;
     dbgDev.innerHTML += `<br> <b>ShapeX:</b> ${shapeInfo.coordinates.x}, <b>ShapeY:</b> ${shapeInfo.coordinates.y}`;
-    dbgDev.innerHTML += `<br> <b>MouseDown:</b> ${mouseDown}`;
+    dbgDev.innerHTML += `<br> <b>MouseDown:</b> ${shapeInfo.mouseDown}`;
     dbgDev.innerHTML += `<br> <b>DeltaX:</b> ${deltaCoordinates.x}, <b>DeltaY:</b> ${deltaCoordinates.y}`;
 
     document.getElementById(
@@ -194,7 +193,7 @@ function storeCanvasDimensions(shapeInfo, deltaCoordinates) {
         x: shapeInfo.coordinates.x,
         y: shapeInfo.coordinates.y,
         color: shapeInfo.color,
-        state: mouseDown,
+        state: shapeInfo.mouseDown,
         mouseDeltaX: deltaCoordinates.x,
         mouseDeltaY: deltaCoordinates.y,
     };
@@ -204,7 +203,7 @@ function storeCanvasDimensions(shapeInfo, deltaCoordinates) {
 }
 
 const syncShapes = (shapeInfo, drawShapeAtCoordinates, ctx) => {
-    if (mouseDown) {
+    if (shapeInfo.mouseDown) {
         return;
     }
 
@@ -235,7 +234,7 @@ const syncShapes = (shapeInfo, drawShapeAtCoordinates, ctx) => {
         );
         return;
     }
-    
+
     drawShapeAtCoordinates(otherShape['x'], otherShape['y']);
     drawMouseHoldPosition(
         otherShape['x'] + otherShape['mouseDeltaX'],
