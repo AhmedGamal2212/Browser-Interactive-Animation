@@ -22,8 +22,8 @@ const setup = () => {
     (deltaX = 0), (deltaY = 0);
     logMouseCoordinates();
     window.addEventListener('mousemove', (event) => {
-        mouseX = event.clientX - cnv.offsetLeft;
-        mouseY = event.clientY - cnv.offsetTop;
+        mouseX = event.clientX + window.scrollX - cnv.offsetLeft;
+        mouseY = event.clientY + window.scrollY - cnv.offsetTop;
         logMouseCoordinates();
         if (mouseDown === true) {
             draw(mouseX - deltaX, mouseY - deltaY, shapeColor);
