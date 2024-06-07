@@ -20,7 +20,6 @@ const setup = () => {
     };
 
     const cnv = document.getElementById('main-canvas');
-
     const ctx = cnv.getContext('2d');
 
     const mouseCoordinates = new Coordinates();
@@ -61,7 +60,6 @@ const setup = () => {
     };
 
     attachEventListeners(attachEventListenersParams);
-
     drawShapeAtCoordinates(shapeInfo.coordinates.x, shapeInfo.coordinates.y);
 };
 
@@ -133,7 +131,6 @@ const draw = (x, y, shapeInfo, deltaCoordinates, ctx) => {
         SHAPE_RADIUS,
         ctx
     );
-
     storeCanvasDimensions(shapeInfo, deltaCoordinates);
 };
 
@@ -210,11 +207,13 @@ const syncShapes = (shapeInfo, drawShapeAtCoordinates, ctx) => {
     if (mouseDown) {
         return;
     }
+
     const shapes = JSON.parse(localStorage.getItem('shapes'));
 
     if (shapes === null) {
         return;
     }
+
     let otherShape;
     for (const key of Object.keys(shapes)) {
         if (key === shapeInfo.ID) {
@@ -224,7 +223,7 @@ const syncShapes = (shapeInfo, drawShapeAtCoordinates, ctx) => {
             otherShape = shapes[key];
         }
     }
-    
+
     document.getElementById(
         'session-count-log'
     ).innerHTML = `<br><b>Other Shape:</b> ${JSON.stringify(otherShape)}`;
@@ -236,6 +235,7 @@ const syncShapes = (shapeInfo, drawShapeAtCoordinates, ctx) => {
         );
         return;
     }
+    
     drawShapeAtCoordinates(otherShape['x'], otherShape['y']);
     drawMouseHoldPosition(
         otherShape['x'] + otherShape['mouseDeltaX'],
