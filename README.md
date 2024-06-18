@@ -2,6 +2,8 @@
 
 This project demonstrates a browser-based animation where a shape is drawn on a canvas for each client. The shape can be moved by dragging it with the mouse, and its position is synchronized across all open local clients. The project also logs the states of the moving shapes and displays various properties of the current shape for each client.
 
+https://github.com/AhmedGamal2212/Browser-Interactive-Animation/assets/94416115/537b58e6-347a-49d6-9ffd-77123af72772
+
 ## Features
 
 - **Unique Shape for Each Client**: Generates a different shape with a random color for each new client.
